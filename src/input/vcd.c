@@ -193,6 +193,13 @@ static gboolean parse_header(const struct sr_input *in, GString *buf)
 			status = TRUE;
 			break;
 		} else if (g_strcmp0(name, "timescale") == 0) {
+			if (inc->samplerate != 0) {
+				/* Assume set by the force_samplerate config option
+				 * (alternatively we have encountered a second timescale, which
+				 * shouldn't happen in well-formed VCDs)
+				 * */
+				continue;
+			}
 			/*
 			 * The standard allows for values 1, 10 or 100
 			 * and units s, ms, us, ns, ps and fs.
@@ -504,6 +511,7 @@ static int init(struct sr_input *in, GHashTable *options)
 	inc->compress = g_variant_get_int32(g_hash_table_lookup(options, "compress"));
 	inc->skip = g_variant_get_int32(g_hash_table_lookup(options, "skip"));
 	inc->skip /= inc->downsample;
+	inc->samplerate = g_variant_get_int32(g_hash_table_lookup(options, "force_samplerate"));
 
 	in->sdi = g_malloc0(sizeof(struct sr_dev_inst));
 	in->priv = inc;
@@ -639,6 +647,7 @@ static struct sr_option options[] = {
 	{ "skip", "Skip samples until timestamp", "Skip samples until the specified timestamp; "
 		"< 0: Skip until first timestamp listed; 0: Don't skip", NULL, NULL },
 	{ "downsample", "Downsampling factor", "Downsample, i.e. divide the samplerate by the specified factor", NULL, NULL },
+	{ "force_samplerate", "Sample rate (Hz)", "Force a sample rate, ignoring the value contained within the file", NULL, NULL },
 	{ "compress", "Compress idle periods", "Compress idle periods longer than the specified value", NULL, NULL },
 	ALL_ZERO
 };
@@ -650,6 +659,7 @@ static const struct sr_option *get_options(void)
 		options[1].def = g_variant_ref_sink(g_variant_new_int32(-1));
 		options[2].def = g_variant_ref_sink(g_variant_new_int32(1));
 		options[3].def = g_variant_ref_sink(g_variant_new_int32(0));
+		options[4].def = g_variant_ref_sink(g_variant_new_int32(0));
 	}
 
 	return options;
