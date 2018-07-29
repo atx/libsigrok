@@ -453,6 +453,12 @@ static void parse_contents(const struct sr_input *in, char *data)
 			 */
 			if (!tokens[i][1] || tokens[i][2] || !tokens[++i]) {
 				sr_dbg("Unexpected vector format!");
+				if (!tokens[++i])
+					/* No tokens left, bail out */
+					break;
+				else
+					/* Process next token */
+					continue;
 				break;
 			}
 
